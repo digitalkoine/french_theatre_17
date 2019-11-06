@@ -1,0 +1,853 @@
+---
+title: "CARTO17"
+author: "Simon Gabay and Giovanni Pietro Vitali"
+date: "9/26/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Preparation
+
+```{r}
+#setwd("")
+```
+
+Install packages if needed
+
+```{r}
+# install.packages("leaflet")
+# install.packages("sp")
+# install.packages("rgal")
+# install.packages("RColorBrewer")
+# install.packages("leaflet.esri")
+```
+
+Call the libraries
+
+```{r}
+library(leaflet)
+library(sp)
+library(rgdal)
+library(RColorBrewer)
+library(leaflet.extras)
+```
+
+Shapefile that contains the geographical information on the macro-area polygons
+
+```{r}
+shp <- readOGR('shapefile_1/area.shp')
+```
+
+Counting the frequency of the recurrence of toponyms 
+
+```{r}
+par(mar = c(5,5,0,0), cex = 10)
+#hist(shp$number, breaks = 20, main = "")
+```
+
+Creating a continuous palette function
+
+```{r}
+pal <- colorNumeric(
+palette = "YlOrRd",
+domain = shp$Notation)
+```
+
+Loading the main csv file
+
+```{r}
+data <- read.csv("csv/theatre.csv")
+
+```
+
+# Load the csv files of each author
+1 Boyer
+
+```{r}
+boyer <- read.csv("csv/boyer.csv")
+data_boyer <- data[complete.cases(boyer),]
+boyer$long <- as.numeric(boyer$lng)
+boyer$lat <- as.numeric(boyer$lat)
+data_boyer.SP <- SpatialPointsDataFrame(boyer[,c(10,11)],
+                                        boyer[,-c(10,11)])
+```
+
+2 Corneille Pierre
+
+```{r}
+corneille_P <- read.csv("csv/corneille_P.csv")
+data_corneille_P <- data[complete.cases(corneille_P),]
+corneille_P$long <- as.numeric(corneille_P$lng)
+corneille_P$lat <- as.numeric(corneille_P$lat)
+data_corneille_P.SP <- SpatialPointsDataFrame(corneille_P[,c(10,11)],
+                                              corneille_P[,-c(10,11)])
+```
+
+3 Corneille Thomas
+
+```{r}
+corneille_T <- read.csv("csv/corneille_T.csv")
+data_corneille_T <- data[complete.cases(corneille_T),]
+corneille_T$long <- as.numeric(corneille_T$lng)
+corneille_T$lat <- as.numeric(corneille_T$lat)
+data_corneille_T.SP <- SpatialPointsDataFrame(corneille_T[,c(10,11)],
+                                              corneille_T[,-c(10,11)])
+```
+
+Du Ryer
+
+```{r}
+duryer <- read.csv("csv/duryer.csv")
+data_duryer <- data[complete.cases(duryer),]
+duryer$long <- as.numeric(duryer$lng)
+duryer$lat <- as.numeric(duryer$lat)
+data_duryer.SP <- SpatialPointsDataFrame(duryer[,c(10,11)],
+                                         duryer[,-c(10,11)])
+```
+
+5 Molière
+
+```{r}
+moliere <- read.csv("csv/moliere.csv")
+data_moliere <- data[complete.cases(moliere),]
+moliere$long <- as.numeric(moliere$lng)
+moliere$lat <- as.numeric(moliere$lat)
+data_moliere.SP <- SpatialPointsDataFrame(moliere[,c(10,11)],
+                                          moliere[,-c(10,11)])
+```
+
+6 Racine
+
+```{r}
+racine <- read.csv("csv/racine.csv")
+data_racine <- data[complete.cases(racine),]
+racine$long <- as.numeric(racine$lng)
+racine$lat <- as.numeric(racine$lat)
+data_racine.SP <- SpatialPointsDataFrame(racine[,c(10,11)],
+                                         racine[,-c(10,11)])
+```
+
+7 Rotrou
+
+```{r}
+rotrou <- read.csv("csv/rotrou.csv")
+data_rotrou <- data[complete.cases(rotrou),]
+rotrou$long <- as.numeric(rotrou$lng)
+rotrou$lat <- as.numeric(rotrou$lat)
+data_rotrou.SP <- SpatialPointsDataFrame(rotrou[,c(10,11)],
+                                         rotrou[,-c(10,11)])
+```
+
+8 Scarron
+
+```{r}
+scarron <- read.csv("csv/scarron.csv")
+data_scarron <- data[complete.cases(scarron),]
+scarron$long <- as.numeric(scarron$lng)
+scarron$lat <- as.numeric(scarron$lat)
+data_scarron.SP <- SpatialPointsDataFrame(scarron[,c(10,11)],
+                                          scarron[,-c(10,11)])
+```
+
+9 Scudéry
+
+```{r}
+scudery <- read.csv("csv/scudery.csv")
+data_scudery <- data[complete.cases(scudery),]
+scudery$long <- as.numeric(scudery$lng)
+scudery$lat <- as.numeric(scudery$lat)
+data_scudery.SP <- SpatialPointsDataFrame(scudery[,c(10,11)],
+                                          scudery[,-c(10,11)])
+```
+
+Load the csv with the authors' data
+
+```{r}
+ecrivain <- read.csv("csv/ecrivain.csv")
+ecrivain <- ecrivain[complete.cases(ecrivain),]
+ecrivain$long <- as.numeric(ecrivain$lng)
+ecrivain$lat <- as.numeric(ecrivain$lat)
+data.SP <- SpatialPointsDataFrame(ecrivain[,c(6,7)],
+                                  ecrivain[,-c(6,7)])
+```
+
+### Load Icons for genre' markers
+
+Comedies
+
+```{r}
+data_comedie <-read.csv("csv/theatre_comedie.csv")
+icon_comedie <- makeAwesomeIcon(icon = "c", 
+                                markerColor = "red",
+                                iconColor = "black", 
+                                library = "glyphicon", 
+                                text = data_comedie$publication,
+                                fontFamily = "small")
+```
+
+Tragedies
+
+```{r}
+data_tragedie <-  read.csv("csv/theatre_tragedie.csv")
+icon_tragedie <- makeAwesomeIcon(icon = "t", 
+                                 markerColor = "green", 
+                                 library = "fa", 
+                                 iconColor = "black",
+                                 text = data_tragedie$publication,
+                                 fontFamily = "small")
+```
+
+Tragi-comedies
+
+```{r}
+data_tragedie_comedie <-  read.csv("csv/theatre_tragedie_comedie.csv")
+icon_tragedie_comedie <- makeAwesomeIcon(icon = "tc", 
+                                         markerColor = "blue",
+                                         library = "ion", 
+                                         text = data_tragedie_comedie$publication,
+                                         fontFamily = "small")
+```
+
+Loading the groups of authors divided by period
+
+```{r}
+theatre_groupe1 <- read.csv("csv/theatre_groupe1.csv")
+theatre_groupe2 <- read.csv("csv/theatre_groupe2.csv")
+theatre_groupe3 <- read.csv("csv/theatre_groupe3.csv")
+```
+
+
+Add a legend of Icon for the genre
+```{r}
+
+  
+  html_legend <- "<p><b> Toponyms by genre:</b></p>
+<img src='http://maps.google.com/mapfiles/ms/icons/red-dot.png' style='width:20px;height:20px;'>Comedy<br/>
+                  <img src='http://maps.google.com/mapfiles/ms/icons/green-dot.png' style='width:20px;height:20px;'>Tragedy<br/>
+                  <img src='http://maps.google.com/mapfiles/ms/icons/blue-dot.png' style='width:20px;height:20px;'>Tragicomedy"
+```
+
+
+Loading the map
+
+```{r}
+m <- leaflet(shp) %>% 
+    ## Choose a standard basemap
+    ## addTiles() %>%
+    
+    ## This is a first example of a possible basemap
+    ## addProviderTiles(providers$OpenStreetMap)  %>% 
+    
+    ## This is a second example of a possible basemap
+    ## addProviderTiles(providers$Stamen.Toner)  %>% 
+    
+    ## This is a third example of a possible basemap
+    addProviderTiles(providers$Esri.NatGeoWorldMap)%>% 
+    
+  
+    ## Add a Zoom reset option
+    addResetMapButton() %>%
+  
+    ## Choose the zoom of the map and its central point
+    setView(lng = -13.439978, 
+            lat = 37.804134, 
+            zoom = 2.2 ) %>%
+    
+    ## Add the layer with the polygons used for the big areas  
+    addPolygons(data = shp, 
+                stroke = FALSE, 
+                smoothFactor = 0.2, 
+                fillOpacity = 1,
+                color = ~pal(number),
+                group = "Areas",
+                label = ~paste("Area:", area, "that has",
+                               number, "occurences",
+                               sep = " ")) %>%
+    
+    ## Add a legend with the occurrences of the toponyms according to the macro areas
+    addLegend("bottomleft", 
+              pal = pal, 
+              values = ~number,
+              title = "Occurrences of toponyms by region:",
+              labFormat = labelFormat(suffix = " occurrences"),
+              opacity = 1,
+              group = "Areas") %>%
+    
+    ## Add a layer of circles for each author 
+  
+    ## 9 Scudéry
+    addCircleMarkers(lng = scudery$lng, 
+                     lat = scudery$lat,
+                     color = "brown",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Georges de Scudéry",
+                     label = ~paste("The toponym", 
+                                    scudery$occurrence,
+                                    "is mentioned in the work", 
+                                    scudery$titre, 
+                                    "by", 
+                                    scudery$auteur)) %>%
+  
+    ## 9 Scudéry - Create a layer with colored dots
+    addCircleMarkers(lng = scudery$lng, 
+                     lat = scudery$lat,
+                     color = "brown",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Toponyms by author",
+                     label = ~paste("The toponym", 
+                                    scudery$occurrence,
+                                    "is mentioned in the work", 
+                                    scudery$titre, 
+                                    "by", 
+                                    scudery$auteur)) %>%
+  
+   ## Add a legend for Scudéry
+    addLegend("bottomleft", 
+              
+              colors= "brown", 
+              
+              labels= "Georges de Scudéry",
+              
+              group = "Georges de Scudéry") %>%
+  
+    # 8 Scarron - Create a layer with colored dots
+    addCircleMarkers(lng = scarron$lng, 
+                     lat = scarron$lat,
+                     color = "white",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Paul Scarron",
+                     label = ~paste("The toponym", 
+                                    scarron$occurrence,
+                                    "is mentioned in the work", 
+                                    scarron$titre, 
+                                    "by", 
+                                    scarron$auteur)) %>%
+  
+    # 8 Scarron - Create a layer with colored dots
+    addCircleMarkers(lng = scarron$lng, 
+                     lat = scarron$lat,
+                     color = "white",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Toponyms by author",
+                     label = ~paste("The toponym", 
+                                    scarron$occurrence,
+                                    "is mentioned in the work", 
+                                    scarron$titre, 
+                                    "by", 
+                                    scarron$auteur)) %>%
+  
+  ## Add a legend for Scarron
+    addLegend("bottomleft", 
+              
+              colors= "white", 
+              
+              labels= "Paul Scarron",
+              
+              group = "Paul Scarron") %>%
+  
+  
+    ##1 Boyer  
+    addCircleMarkers(lng = boyer$lng, 
+                     lat = boyer$lat,
+                     color = "blue",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Claude Boyer",
+                     label = ~paste("The toponym", 
+                                    boyer$occurrence,
+                                    "is mentioned in the work", 
+                                    boyer$titre, 
+                                    "by", 
+                                    boyer$auteur)) %>%
+  
+  ##1 Boyer - Create a layer with colored dots
+    addCircleMarkers(lng = boyer$lng, 
+                     lat = boyer$lat,
+                     color = "blue",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Toponyms by author",
+                     label = ~paste("The toponym", 
+                                    boyer$occurrence,
+                                    "is mentioned in the work", 
+                                    boyer$titre, 
+                                    "by", 
+                                    boyer$auteur)) %>%
+  
+  
+  ## Add a legend for
+    addLegend("bottomleft", 
+              
+              colors= "blue", 
+              
+              labels= "Claude Boyer",
+              
+              group = "Claude Boyer") %>%
+  
+    
+  ## 2 Corneille Pierre
+    addCircleMarkers(lng = corneille_P$lng, 
+                     lat = corneille_P$lat,
+                     color = "Yellow",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Corneille Pierre",
+                     label = ~paste("The toponym", 
+                                    corneille_P$occurrence,
+                                    "is mentioned in the work", 
+                                    corneille_P$titre, 
+                                    "by", 
+                                    corneille_P$auteur)) %>%
+    
+  ## 2 Corneille Pierre - Create a layer with colored dots
+    addCircleMarkers(lng = corneille_P$lng, 
+                     lat = corneille_P$lat,
+                     color = "Yellow",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Toponyms by author",
+                     label = ~paste("The toponym", 
+                                    corneille_P$occurrence,
+                                    "is mentioned in the work", 
+                                    corneille_P$titre, 
+                                    "by", 
+                                    corneille_P$auteur)) %>%
+  
+  
+  ## Add a legend for
+    addLegend("bottomleft", 
+              
+              colors= "Yellow", 
+              
+              labels= "Corneille Pierre",
+              
+              group = "Corneille Pierre") %>%
+  
+    ## 3 Corneille Thomas
+    addCircleMarkers(lng = corneille_T$lng, 
+                     lat = corneille_T$lat,
+                     color = "Green",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Thomas Corneille",
+                     label = ~paste("The toponym", 
+                                    corneille_T$occurrence,
+                                    "is mentioned in the work", 
+                                    corneille_T$titre, 
+                                    "by", 
+                                    corneille_T$auteur)) %>%
+  
+  ## 3 Corneille Thomas - Create a layer with colored dots
+    addCircleMarkers(lng = corneille_T$lng, 
+                     lat = corneille_T$lat,
+                     color = "Green",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Toponyms by author",
+                     label = ~paste("The toponym", 
+                                    corneille_T$occurrence,
+                                    "is mentioned in the work", 
+                                    corneille_T$titre, 
+                                    "by", 
+                                    corneille_T$auteur)) %>%
+  
+  ## Add a legend for
+    addLegend("bottomleft", 
+              
+              colors= "Green", 
+              
+              labels= "Thomas Corneille",
+              
+              group = "Thomas Corneille") %>%
+  
+  
+    ## 4 Du Ryer
+    addCircleMarkers(lng = duryer$lng, 
+                     lat = duryer$lat,
+                     color = "Purple",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Pierre du Ryer",
+                     label = ~paste("The toponym", 
+                                    duryer$occurrence,
+                                    "is mentioned in the work", 
+                                    duryer$titre, 
+                                    "of", 
+                                    duryer$auteur)) %>%
+  
+  ## 4 Du Ryer - Create a layer with colored dots
+    addCircleMarkers(lng = duryer$lng, 
+                     lat = duryer$lat,
+                     color = "Purple",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Toponyms by author",
+                     label = ~paste("The toponym", 
+                                    duryer$occurrence,
+                                    "is mentioned in the work", 
+                                    duryer$titre, 
+                                    "of", 
+                                    duryer$auteur)) %>%
+  
+  ## Add a legend for
+    addLegend("bottomleft", 
+              
+              colors= "purple", 
+              
+              labels= "Pierre du Ryer",
+              
+              group = "Pierre du Ryer") %>%
+    
+    ## 5 Molière
+    addCircleMarkers(lng = moliere$lng, 
+                     lat = moliere$lat,
+                     color = "Violet",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Molière",
+                     label = ~paste("The toponym", 
+                                    moliere$occurrence,
+                                    "is mentioned in the work", 
+                                    moliere$titre, 
+                                    "by", 
+                                    moliere$auteur)) %>%
+  
+  ## 5 Molière - Create a layer with colored dots
+    addCircleMarkers(lng = moliere$lng, 
+                     lat = moliere$lat,
+                     color = "Violet",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Toponyms by author",
+                     label = ~paste("The toponym", 
+                                    moliere$occurrence,
+                                    "is mentioned in the work", 
+                                    moliere$titre, 
+                                    "by", 
+                                    moliere$auteur)) %>%
+  
+  ## Add a legend for
+    addLegend("bottomleft", 
+              
+              colors= "Violet", 
+              
+              labels= "Molière",
+              
+              group = "Molière") %>%
+    
+    ## 6 Racine
+    addCircleMarkers(lng = racine$lng, 
+                     lat = racine$lat,
+                     color = "Orange",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Jean Racine",
+                     label = ~paste("The toponym", 
+                                    racine$occurrence,
+                                    "is mentioned in the work", 
+                                    racine$titre, 
+                                    "by", 
+                                    racine$auteur)) %>%
+  
+  ## 6 Racine - Create a layer with colored dots
+    addCircleMarkers(lng = racine$lng, 
+                     lat = racine$lat,
+                     color = "Orange",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Toponyms by author",
+                     label = ~paste("The toponym", 
+                                    racine$occurrence,
+                                    "is mentioned in the work", 
+                                    racine$titre, 
+                                    "by", 
+                                    racine$auteur)) %>%
+  
+  ## Add a legend for
+    addLegend("bottomleft", 
+              
+              colors= "Orange", 
+              
+              labels= "Jean Racine",
+              
+              group = "Jean Racine") %>%
+  
+    ## 7 Rotrou
+    addCircleMarkers(lng = rotrou$lng, 
+                     lat = rotrou$lat,
+                     color = "red",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Jean Rotrou",
+                     label = ~paste("The toponym", 
+                                    rotrou$occurrence,
+                                    "is mentioned in the work", 
+                                    rotrou$titre, 
+                                    "by", 
+                                    rotrou$auteur)) %>%
+  
+   ## 7 Rotrou - Create a layer with colored dots
+    addCircleMarkers(lng = rotrou$lng, 
+                     lat = rotrou$lat,
+                     color = "red",
+                     weight = 1,
+                     radius = 14,
+                     fillOpacity = 0.6,
+                     group = "Toponyms by author",
+                     label = ~paste("The toponym", 
+                                    rotrou$occurrence,
+                                    "is mentioned in the work", 
+                                    rotrou$titre, 
+                                    "by", 
+                                    rotrou$auteur)) %>%
+  
+  ## Add a legend for
+    addLegend("bottomleft", 
+              
+              colors= "red", 
+              
+              labels= "Jean Rotrou",
+              
+              group = "Jean Rotrou") %>%
+  
+    
+    ## Add a legend to link colored dots to their authors of reference
+    addLegend("bottomleft", 
+              
+              colors= c("blue", "Yellow", "Green", 
+                        "purple", "Violet", "Orange", 
+                        "red", "white", "brown"), 
+              
+              labels=c("Claude Boyer", "Corneille Pierre", "Thomas Corneille",
+                       "Pierre du Ryer", "Molière", "Jean Racine",
+                       "Jean Rotrou", "Paul Scarron", "Georges de Scudéry"),
+              
+              title= "Toponyms by author:",
+              
+              group = "Toponyms by author") %>%
+    
+    ## Create the markers layer with a html pop-up 
+    addMarkers(data = data, 
+               lng = ~lng, 
+               lat = ~lat,
+               group = "List of places",
+               popup = ~paste("<h4>Information on this place:</h4>", 
+                              "Occurrence:", "<b>", occurrence,"</b>","<br>", 
+                              "Type:", "<b>", type, "</b>", "</b>","<br>",
+                              "Author:", "<b>", auteur, "</b>","<br>",
+                              "Title:", "<b>", titre, "</b>", "<br>",
+                              "Year:", "<b>", publication, "</b>", "<br>",
+                              "Genre:", "<b>", genre, "</b>", "<br>",
+                              sep = " "),
+               clusterOptions = markerClusterOptions()) %>%
+    
+    ## Create markers with custumised custom made icons
+    ## Commedies
+    addAwesomeMarkers(data = data_comedie, 
+                      data_comedie$lng, 
+                      data_comedie$lat,
+                      group = "Comedy",
+                      icon = icon_comedie,
+                      popup = ~paste("<h4>Information on this place:</h4>", 
+                                     "Occurrence:", "<b>", occurrence,"</b>","<br>", 
+                                     "Type:", "<b>", type, "</b>", "</b>","<br>",
+                                     "Author:", "<b>", auteur, "</b>","<br>",
+                                     "Title:", "<b>", titre, "</b>", "<br>",
+                                     "Year:", "<b>", publication, "</b>", "<br>",
+                                     "Genre:", "<b>", genre, "</b>", "<br>",
+                                     sep = " ")) %>%
+    
+    ## Tragedies
+    addAwesomeMarkers(data = data_tragedie, 
+                      data_tragedie$lng, 
+                      data_tragedie$lat,
+                      group = "Tragedy",
+                      icon = icon_tragedie,
+                      popup = ~paste("<h4>Information on this place:</h4>", 
+                                     "Occurrence:", "<b>", occurrence,"</b>","<br>", 
+                                     "Type:", "<b>", type, "</b>", "</b>","<br>",
+                                     "Author:", "<b>", auteur, "</b>","<br>",
+                                     "Title:", "<b>", titre, "</b>", "<br>",
+                                     "Year:", "<b>", publication, "</b>", "<br>",
+                                     "Genre:", "<b>", genre, "</b>", "<br>",
+                                     sep = " ")) %>%
+    
+    ## Tragic-commedies
+    addAwesomeMarkers(data = data_tragedie_comedie, 
+                      data_tragedie_comedie$lng, 
+                      data_tragedie_comedie$lat,
+                      group = "Tragicomedy",
+                      icon = icon_tragedie_comedie,
+                      popup = ~paste("<h4>Information on this place:</h4>", 
+                                     "Occurrence:", "<b>", occurrence,"</b>","<br>", 
+                                     "Type:", "<b>", type, "</b>", "</b>","<br>",
+                                     "Author:", "<b>", auteur, "</b>","<br>",
+                                     "Title:", "<b>", titre, "</b>", "<br>",
+                                     "Year:", "<b>", publication, "</b>", "<br>",
+                                     "Genre:", "<b>", genre, "</b>", "<br>",
+                                     sep = " ")) %>%
+    
+    ## Add a group of heatmap, one for each period of writers' production
+    ## First period: Du Ryer, Scudéry, Rotrou, Scarron
+    addHeatmap(theatre_groupe1$lng,
+               theatre_groupe1$lat, 
+               group = "First Period",
+               blur = 20, 
+               max = 0.5, 
+               radius = 15, 
+               gradient = '#ff7f50') %>%
+  
+  # Add a legend that combines icon markers layers and heatmap layers
+    addLegend(position = "bottomleft", 
+              labels = c("First Period", 
+                         "Second Period",
+                         "Third Period"), 
+              
+              colors = c("red", 
+                         "blue", 
+                         "green"),
+              
+              group = "First Period",
+              
+              title = "Toponyms by period:") %>%
+  
+    ## Second Period: Pierre Corneille
+    addHeatmap(theatre_groupe2$lng,
+               theatre_groupe2$lat, 
+               group = "Second Period",
+               blur = 20, 
+               max = 0.5, 
+               radius = 15,
+               gradient = '#6495ed') %>%
+  
+  # Add a legend that combines icon markers layers and heatmap layers
+    addLegend(position = "bottomleft", 
+              labels = c("First Period", 
+                         "Second Period",
+                         "Third Period"), 
+              
+              colors = c("red", 
+                         "blue", 
+                         "green"),
+              
+              group = "Second Period",
+              
+              title = "Toponyms by period:") %>%
+    
+    ## Third Period: Boyer, Thomas Corneille, Molière, Racine
+    addHeatmap(theatre_groupe3$lng,
+               theatre_groupe3$lat, 
+               group = "Third Period",
+               blur = 20, 
+               max = 0.5,
+               radius = 15,
+               gradient = '#9acd32') %>%
+  
+  # Add a legend that combines icon markers layers and heatmap layers
+    addLegend(position = "bottomleft", 
+              labels = c("First Period", 
+                         "Second Period",
+                         "Third Period"), 
+              
+              colors = c("red", 
+                         "blue", 
+                         "green"),
+              
+              group = "Third Period",
+              
+              title = "Toponyms by period:") %>%
+  
+    
+    ## Add a legend for genre
+   addControl(html = html_legend, position = "bottomleft") %>%
+    ## Add a legend with the credits
+    addLegend("topright", 
+              
+              colors = c("trasparent", "trasparent"),
+
+              labels=c("Mapping: Giovanni Pietro Vitali - giovannipietrovitali@gmail.com",
+                       "Extraction: Simon Gabay - simon.gabay@unine.ch"),
+             
+              title="Mapping French Theatre:") %>%
+    
+    ## Add the layer selector which allows you to navigate the possibilities offered by this map
+    
+    addLayersControl(baseGroups = c("List of places",
+                                    "Empty layer"),
+                     
+                     overlayGroups = c("Areas",
+                                       "Comedy",
+                                       "Tragedy",
+                                       "Tragicomedy",
+                                       "First Period",
+                                       "Second Period",
+                                       "Third Period",
+                                       "Toponyms by author",
+                                       "Claude Boyer",
+                                       "Corneille Pierre",
+                                       "Thomas Corneille",
+                                       "Pierre du Ryer",
+                                       "Molière",
+                                       "Jean Racine",
+                                       "Jean Rotrou",
+                                       "Paul Scarron",
+                                       "Georges de Scudéry"),
+                     
+                     options = layersControlOptions(collapsed = TRUE)) %>%
+    
+    ## Hide the layers that the users can choose as they like
+    hideGroup(c("Empty",
+                "Authors",
+                "Toponyms by author",
+                "Comedy",
+                "Tragedy",
+                "Tragicomedy",
+                "First Period",
+                "Second Period",
+                "Third Period",
+                "Claude Boyer",
+                "Corneille Pierre",
+                "Thomas Corneille",
+                "Pierre du Ryer",
+                "Molière",
+                "Jean Racine",
+                "Jean Rotrou",
+                "Paul Scarron",
+                "Georges de Scudéry"))
+```
+
+```{r}
+
+#labelFormat(prefix = "", suffix = "", between = " – ",
+#            digits = 3, big.mark = ",", transform = identity)
+```
+
+Showing the map
+
+```{r}
+m
+```
